@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+
+# Database
+server/hms.db
+*.sqlite
+*.sqlite3
+
+# Build outputs
+dist/
+build/
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Uploads (Keep directory but ignore files)
+server/uploads/*
+!server/uploads/.gitkeep
