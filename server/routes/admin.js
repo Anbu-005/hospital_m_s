@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const db = require('../database');
+const User = require('../models/User');
+const Appointment = require('../models/Appointment');
 const { authenticateToken, verifyRole } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
@@ -32,74 +33,113 @@ router.post('/doctor', upload.single('photo'), async (req, res) => {
     const photoUrl = req.file ? `http://localhost:5000/uploads/${req.file.filename}` : 'https://via.placeholder.com/150';
 
     try {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email already exists' });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
-        db.run(`INSERT INTO users (name, email, password, role, specialization, age, photo, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-            [name, email, hashedPassword, 'doctor', specialization, age || null, photoUrl, phone || null],
-            function (err) {
-                if (err) {
-                    if (err.message.includes('UNIQUE constraint failed')) {
-                        return res.status(400).json({ message: 'Email already exists' });
-                    }
-                    return res.status(500).json({ message: 'Database error' });
-                }
-                res.status(201).json({ message: 'Doctor added successfully' });
-            }
-        );
+
+        const newDoctor = new User({
+            name,
+            email,
+            password: hashedPassword,
+            role: 'doctor',
+            specialization,
+            age: age || null,
+            photo: photoUrl,
+            phone: phone || null,
+            status: 'active'
+        });
+
+        await newDoctor.save();
+        res.status(201).json({ message: 'Doctor added successfully' });
     } catch (err) {
+        console.error(err);
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ message: messages.join(', ') });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });
 
 // Get All Doctors
-router.get('/doctors', (req, res) => {
-    const query = `
-        SELECT id, name, email, specialization, age, photo, phone, status 
-        FROM users WHERE role = 'doctor'
-    `;
-    db.all(query, [], (err, rows) => {
-        if (err) return res.status(500).json({ message: 'Database error' });
-        res.json(rows);
-    });
+router.get('/doctors', async (req, res) => {
+    try {
+        const doctors = await User.find({ role: 'doctor' }).select('-password');
+        // Retrieve virtual 'id'
+        const doctorsWithId = doctors.map(doc => ({
+            ...doc.toObject(),
+            id: doc._id
+        }));
+        res.json(doctorsWithId);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Database error' });
+    }
 });
 
 // Delete Doctor
-router.delete('/doctor/:id', (req, res) => {
-    db.run(`DELETE FROM users WHERE id = ? AND role = 'doctor'`, [req.params.id], function (err) {
-        if (err) return res.status(500).json({ message: 'Database error' });
+router.delete('/doctor/:id', async (req, res) => {
+    try {
+        await User.findOneAndDelete({ _id: req.params.id, role: 'doctor' });
         res.json({ message: 'Doctor deleted' });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Database error' });
+    }
 });
 
 // Update Doctor Status
-router.put('/doctor/:id/status', (req, res) => {
+router.put('/doctor/:id/status', async (req, res) => {
     const { status } = req.body;
-    db.run(`UPDATE users SET status = ? WHERE id = ?`, [status, req.params.id], (err) => {
-        if (err) return res.status(500).json({ message: 'Database error' });
+    try {
+        await User.findByIdAndUpdate(req.params.id, { status });
         res.json({ message: 'Status updated' });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Database error' });
+    }
 });
 
 // View All Appointments
-router.get('/appointments', (req, res) => {
-    const query = `
-        SELECT a.id, a.date, a.time, a.status, 
-               d.name as doctor_name, p.name as patient_name 
-        FROM appointments a
-        JOIN users d ON a.doctor_id = d.id
-        JOIN users p ON a.patient_id = p.id
-    `;
-    db.all(query, [], (err, rows) => {
-        if (err) return res.status(500).json({ message: 'Database error' });
-        res.json(rows);
-    });
+router.get('/appointments', async (req, res) => {
+    try {
+        const appointments = await Appointment.find()
+            .populate('doctor_id', 'name')
+            .populate('patient_id', 'name');
+
+        const formatted = appointments.map(app => ({
+            id: app._id,
+            date: app.date,
+            time: app.time,
+            status: app.status,
+            doctor_name: app.doctor_id ? app.doctor_id.name : 'Unknown',
+            patient_name: app.patient_id ? app.patient_id.name : 'Unknown'
+        }));
+
+        res.json(formatted);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Database error' });
+    }
 });
 
 // View All Patients (simplified fetch)
-router.get('/patients', (req, res) => {
-    db.all(`SELECT id, name, email FROM users WHERE role = 'patient'`, [], (err, patients) => {
-        if (err) return res.status(500).json({ message: 'Database error' });
-        res.json(patients);
-    });
+router.get('/patients', async (req, res) => {
+    try {
+        const patients = await User.find({ role: 'patient' }).select('name email');
+        const formatted = patients.map(p => ({
+            id: p._id,
+            name: p.name,
+            email: p.email
+        }));
+        res.json(formatted);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Database error' });
+    }
 });
 
 module.exports = router;

@@ -1,23 +1,24 @@
 const express = require('express');
 const cors = require('cors');
-const authRoutes = require('./routes/auth');
-const adminRoutes = require('./routes/admin');
-const doctorRoutes = require('./routes/doctor');
-const patientRoutes = require('./routes/patient');
+const path = require('path');
+const connectDB = require('./database');
 
 const app = express();
 const PORT = 5000;
 
-app.use(cors());
+// Connect to MongoDB
+connectDB();
+
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+app.use(cors());
+
+// Serve Static Uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/doctor', doctorRoutes);
-app.use('/api/patient', patientRoutes);
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/doctor', require('./routes/doctor'));
+app.use('/api/patient', require('./routes/patient'));
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

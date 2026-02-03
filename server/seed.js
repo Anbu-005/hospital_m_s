@@ -1,30 +1,67 @@
-const db = require('./database');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const User = require('./models/User');
+const Appointment = require('./models/Appointment');
+const connectDB = require('./database');
 
-const seed = async () => {
+async function seed() {
+    await connectDB();
+
     const password = await bcrypt.hash('admin123', 10);
 
-    // Simple delay to ensure tables are created by database.js
-    setTimeout(() => {
-        db.serialize(() => {
-            // Seed Admin
-            db.run(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`,
-                ['Super Admin', 'admin@hms.com', password, 'admin'],
-                (err) => {
-                    if (err && !err.message.includes('UNIQUE constraint failed')) console.error(err);
-                }
-            );
+    // Clear existing data
+    await User.deleteMany({});
+    await Appointment.deleteMany({});
 
-            // Seed Demo Doctor
-            db.run(`INSERT INTO users (name, email, password, role, specialization, age, photo, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                ['Dr. Sarah Smith', 'sarah@hms.com', password, 'doctor', 'Cardiology', 35, 'https://randomuser.me/api/portraits/women/44.jpg', '555-0123', 'active'],
-                (err) => {
-                    if (err && !err.message.includes('UNIQUE constraint failed')) console.error(err);
-                    else console.log('Database seeded!');
-                }
-            );
-        });
-    }, 1000);
-};
+    // Seed Admin
+    await User.create({
+        name: 'Super Admin',
+        email: 'admin@hms.com',
+        password: password,
+        role: 'admin',
+        status: 'active'
+    });
+    console.log('Admin seeded');
 
-seed();
+    // Seed Doctor
+    const doctor = await User.create({
+        name: 'Dr. Sarah Smith',
+        email: 'sarah@hms.com',
+        password: password,
+        role: 'doctor',
+        specialization: 'Cardiology',
+        age: 35,
+        photo: 'https://via.placeholder.com/150',
+        phone: '1234567890',
+        status: 'active'
+    });
+    console.log('Doctor seeded');
+
+    // Seed Patient
+    const patient = await User.create({
+        name: 'John Doe',
+        email: 'john@hms.com',
+        password: password,
+        role: 'patient',
+        status: 'active'
+    });
+    console.log('Patient seeded');
+
+    // Seed Appt
+    await Appointment.create({
+        doctor_id: doctor._id,
+        patient_id: patient._id,
+        date: '2026-03-01',
+        time: '10:00',
+        status: 'pending'
+    });
+    console.log('Appointment seeded');
+
+    console.log('Database seeded!');
+    process.exit();
+}
+
+seed().catch(err => {
+    console.error(err);
+    process.exit(1);
+});

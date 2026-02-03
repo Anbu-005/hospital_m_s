@@ -12,7 +12,7 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/auth/register', { name, email, password });
+            await api.post('/auth/register', { name, email, password, role: 'patient' });
             alert('Registration successful! Please login.');
             navigate('/login');
         } catch (err) {
@@ -43,6 +43,8 @@ const Register = () => {
                             className="form-control"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            pattern=".+@gmail\.com"
+                            title="Please provide a valid @gmail.com address"
                             required
                         />
                     </div>

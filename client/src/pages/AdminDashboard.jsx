@@ -126,7 +126,7 @@ const AdminDashboard = () => {
                     </div>
                     <div>
                         <label className="form-label">Email</label>
-                        <input className="form-control" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input className="form-control" type="email" value={email} onChange={e => setEmail(e.target.value)} pattern=".+@gmail\.com" title="Please provide a valid @gmail.com address" required />
                     </div>
                     <div>
                         <label className="form-label">Password</label>

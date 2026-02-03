@@ -24,7 +24,7 @@ const DoctorDashboard = () => {
 
     const fetchProfile = async () => {
         try {
-            const res = await api.get('/doctor/me');
+            const res = await api.get('/doctor/profile');
             setProfile(res.data);
         } catch (err) {
             console.error(err);
