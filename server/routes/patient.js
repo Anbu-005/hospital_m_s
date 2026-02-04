@@ -8,6 +8,17 @@ const router = express.Router();
 // Middleware: Only Patient
 router.use(authenticateToken, verifyRole(['patient']));
 
+// Get My Profile
+router.get('/profile', async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        res.json(user);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error fetching profile' });
+    }
+});
+
 // List Doctors with Stats
 router.get('/doctors', async (req, res) => {
     try {
@@ -25,6 +36,24 @@ router.get('/doctors', async (req, res) => {
         }));
 
         res.json(doctorsWithStats);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Database error' });
+    }
+});
+
+// Get Single Doctor Profile
+router.get('/doctors/:id', async (req, res) => {
+    try {
+        const doctor = await User.findOne({ _id: req.params.id, role: 'doctor' }).select('-password');
+        if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+
+        const count = await Appointment.countDocuments({ doctor_id: doctor._id, status: 'completed' });
+        res.json({
+            ...doctor.toObject(),
+            id: doctor._id,
+            experience_count: count
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Database error' });

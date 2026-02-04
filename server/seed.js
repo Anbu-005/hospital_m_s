@@ -16,7 +16,7 @@ async function seed() {
     // Seed Admin
     await User.create({
         name: 'Super Admin',
-        email: 'admin@hms.com',
+        email: 'admin@gmail.com',
         password: password,
         role: 'admin',
         status: 'active'
@@ -26,7 +26,7 @@ async function seed() {
     // Seed Doctor
     const doctor = await User.create({
         name: 'Dr. Sarah Smith',
-        email: 'sarah@hms.com',
+        email: 'sarah.doctor@gmail.com',
         password: password,
         role: 'doctor',
         specialization: 'Cardiology',
@@ -40,7 +40,7 @@ async function seed() {
     // Seed Patient
     const patient = await User.create({
         name: 'John Doe',
-        email: 'john@hms.com',
+        email: 'john.patient@gmail.com',
         password: password,
         role: 'patient',
         status: 'active'

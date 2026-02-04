@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import api, { getImageUrl } from '../api';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -16,6 +16,7 @@ const AdminDashboard = () => {
     const [age, setAge] = useState('');
     const [phone, setPhone] = useState('');
     const [photo, setPhoto] = useState(null); // File object
+    const [photoPreview, setPhotoPreview] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -64,6 +65,7 @@ const AdminDashboard = () => {
             setAge('');
             setPhone('');
             setPhoto(null);
+            setPhotoPreview(null);
 
             fetchData();
         } catch (err) {
@@ -97,143 +99,200 @@ const AdminDashboard = () => {
 
     return (
         <div className="container">
-            <div className="header">
-                <h1>Admin Dashboard</h1>
-                <button onClick={handleLogout} className="btn btn-danger">Logout</button>
+            <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ background: 'var(--primary)', color: 'white', padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold' }}>HMS</div>
+                    <h2 style={{ margin: 0, color: 'white' }}>Admin Control</h2>
+                </div>
+                <button onClick={handleLogout} className="btn btn-danger">Sign Out</button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                <div className="card" style={{ textAlign: 'center' }}>
-                    <h3>Total Appointments</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.total}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', marginBottom: '4rem' }}>
+                <div className="card stat-item" style={{ borderBottom: '4px solid var(--primary)' }}>
+                    <div className="stat-value">{stats.total}</div>
+                    <div className="stat-label">Total Appointments</div>
                 </div>
-                <div className="card" style={{ textAlign: 'center' }}>
-                    <h3>Pending</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#d97706' }}>{stats.pending}</p>
+                <div className="card stat-item" style={{ borderBottom: '4px solid #f59e0b' }}>
+                    <div className="stat-value" style={{ color: '#fbbf24' }}>{stats.pending}</div>
+                    <div className="stat-label">Pending Reviews</div>
                 </div>
-                <div className="card" style={{ textAlign: 'center' }}>
-                    <h3>Completed</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--success)' }}>{stats.completed}</p>
+                <div className="card stat-item" style={{ borderBottom: '4px solid var(--success)' }}>
+                    <div className="stat-value" style={{ color: '#34d399' }}>{stats.completed}</div>
+                    <div className="stat-label">Successful Procedures</div>
                 </div>
             </div>
 
-            <div className="card">
-                <h2>Add New Doctor</h2>
-                <form onSubmit={handleAddDoctor} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                    <div>
-                        <label className="form-label">Name</label>
-                        <input className="form-control" value={name} onChange={e => setName(e.target.value)} required />
+            <div className="section-title">
+                <h2>Onboard Medical Expert</h2>
+            </div>
+            <div className="card" style={{ marginBottom: '4rem', padding: '2.5rem' }}>
+                <form onSubmit={handleAddDoctor}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2.5rem' }}>
+                        {/* Section 1: Identity */}
+                        <div>
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span>👤</span> Basic Information
+                            </h3>
+                            <div className="form-group">
+                                <label className="form-label">Full Name</label>
+                                <input className="form-control" value={name} onChange={e => setName(e.target.value)} placeholder="Dr. Jane Smith" required />
+                            </div>
+                            <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                                <label className="form-label">Age</label>
+                                <input className="form-control" type="number" value={age} onChange={e => setAge(e.target.value)} placeholder="Years" />
+                            </div>
+                        </div>
+
+                        {/* Section 2: Credentials */}
+                        <div>
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span>🔑</span> Access Credentials
+                            </h3>
+                            <div className="form-group">
+                                <label className="form-label">Gmail Address</label>
+                                <input className="form-control" type="email" value={email} onChange={e => setEmail(e.target.value)} pattern=".+@gmail\.com" placeholder="jane@gmail.com" required />
+                            </div>
+                            <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                                <label className="form-label">Temporary Password</label>
+                                <input className="form-control" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
+                            </div>
+                        </div>
+
+                        {/* Section 3: Professional */}
+                        <div>
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span>🩺</span> Professional Details
+                            </h3>
+                            <div className="form-group">
+                                <label className="form-label">Specialization</label>
+                                <input className="form-control" value={specialization} onChange={e => setSpecialization(e.target.value)} placeholder="e.g. Cardiology" required />
+                            </div>
+                            <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                                <label className="form-label">Contact Number</label>
+                                <input className="form-control" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="10-digit number" />
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label className="form-label">Email</label>
-                        <input className="form-control" type="email" value={email} onChange={e => setEmail(e.target.value)} pattern=".+@gmail\.com" title="Please provide a valid @gmail.com address" required />
-                    </div>
-                    <div>
-                        <label className="form-label">Password</label>
-                        <input className="form-control" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-                    </div>
-                    <div>
-                        <label className="form-label">Specialization</label>
-                        <input className="form-control" value={specialization} onChange={e => setSpecialization(e.target.value)} required />
-                    </div>
-                    <div>
-                        <label className="form-label">Age</label>
-                        <input className="form-control" type="number" value={age} onChange={e => setAge(e.target.value)} placeholder="Optional" />
-                    </div>
-                    <div>
-                        <label className="form-label">Phone Number</label>
-                        <input className="form-control" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="Optional" />
-                    </div>
-                    <div>
-                        <label className="form-label">Photo (Upload)</label>
-                        <input
-                            className="form-control"
-                            type="file"
-                            accept="image/*"
-                            onChange={e => setPhoto(e.target.files[0])}
-                        />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'end' }}>
-                        <button className="btn btn-primary" type="submit">Add Doctor</button>
+
+                    <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--glass-border)' }}>
+                        <div className="form-group">
+                            <label className="form-label" style={{ display: 'block', marginBottom: '1rem' }}>Profile Identity (Photo & Onboarding)</label>
+                            <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <div style={{
+                                    width: '80px',
+                                    height: '80px',
+                                    borderRadius: '20px',
+                                    background: 'var(--glass-bg)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '1px solid var(--glass-border)',
+                                    overflow: 'hidden',
+                                    flexShrink: 0
+                                }}>
+                                    {photoPreview ? (
+                                        <img src={photoPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <span style={{ fontSize: '2rem', opacity: 0.2 }}>📷</span>
+                                    )}
+                                </div>
+                                <input
+                                    className="form-control"
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ padding: '0.6rem', flex: 1, minWidth: '250px' }}
+                                    onChange={e => {
+                                        const file = e.target.files[0];
+                                        setPhoto(file);
+                                        if (file) setPhotoPreview(URL.createObjectURL(file));
+                                    }}
+                                />
+                                <button className="btn btn-primary" type="submit" style={{ height: '54px', padding: '0 3rem', fontSize: '1rem' }}>
+                                    Complete Onboarding
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
 
-            <div className="card">
-                <h2>Doctors List</h2>
-                <div className="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Doctor</th>
-                                <th>Contact</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+            <div className="section-title">
+                <h2>Medical Staff Registry</h2>
+            </div>
+            <div className="table-container" style={{ marginBottom: '4rem' }}>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Practitioner</th>
+                            <th>Contact Details</th>
+                            <th>Current Status</th>
+                            <th style={{ textAlign: 'right' }}>Management Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {doctors.map(doc => (
+                            <tr key={doc.id}>
+                                <td style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                    <img
+                                        src={getImageUrl(doc.photo)}
+                                        alt={doc.name}
+                                        style={{ width: '56px', height: '56px', borderRadius: '14px', objectFit: 'cover', background: 'var(--glass-bg)' }}
+                                    />
+                                    <div>
+                                        <div style={{ fontWeight: '600', color: 'white' }}>{doc.name}</div>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>{doc.specialization}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style={{ fontSize: '0.9rem', color: 'white' }}>{doc.email}</div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{doc.phone || 'No phone'}</div>
+                                </td>
+                                <td><span className={`status-badge status-${doc.status}`}>{doc.status.replace('_', ' ').toUpperCase()}</span></td>
+                                <td style={{ textAlign: 'right' }}>
+                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                        {doc.status === 'leave_requested' && (
+                                            <button className="btn btn-primary" style={{ padding: '0.5rem 0.8rem', fontSize: '0.75rem' }} onClick={() => handleStatusUpdate(doc.id, 'on_leave')}>Approve Leave</button>
+                                        )}
+                                        {doc.status === 'return_requested' && (
+                                            <button className="btn btn-primary" style={{ padding: '0.5rem 0.8rem', fontSize: '0.75rem' }} onClick={() => handleStatusUpdate(doc.id, 'active')}>Approve Return</button>
+                                        )}
+                                        {(doc.status.includes('requested')) && (
+                                            <button className="btn btn-outline" style={{ padding: '0.5rem 0.8rem', fontSize: '0.75rem', color: '#f87171' }} onClick={() => handleStatusUpdate(doc.id, doc.status === 'leave_requested' ? 'active' : 'on_leave')}>Reject</button>
+                                        )}
+                                        <button className="btn btn-outline" style={{ padding: '0.5rem 0.8rem', fontSize: '0.75rem', borderColor: 'rgba(239, 68, 68, 0.2)', color: '#f87171' }} onClick={() => handleDeleteDoctor(doc.id)}>Remove</button>
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {doctors.map(doc => (
-                                <tr key={doc.id}>
-                                    <td style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <img src={doc.photo} alt="" className="avatar" style={{ width: '50px', height: '50px' }} />
-                                        <div>
-                                            <div style={{ fontWeight: 'bold' }}>{doc.name}</div>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{doc.specialization}</div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style={{ fontSize: '0.9rem' }}>{doc.email}</div>
-                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{doc.phone || 'No phone'}</div>
-                                    </td>
-                                    <td><span className={`status-badge status-${doc.status}`}>{doc.status.replace('_', ' ')}</span></td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            {doc.status === 'leave_requested' && (
-                                                <button className="btn btn-success" style={{ padding: '0.5rem', fontSize: '0.8rem' }} onClick={() => handleStatusUpdate(doc.id, 'on_leave')}>Approve Leave</button>
-                                            )}
-                                            {doc.status === 'return_requested' && (
-                                                <button className="btn btn-success" style={{ padding: '0.5rem', fontSize: '0.8rem' }} onClick={() => handleStatusUpdate(doc.id, 'active')}>Approve Return</button>
-                                            )}
-                                            {(doc.status.includes('requested')) && (
-                                                <button className="btn btn-danger" style={{ padding: '0.5rem', fontSize: '0.8rem' }} onClick={() => handleStatusUpdate(doc.id, doc.status === 'leave_requested' ? 'active' : 'on_leave')}>Reject</button>
-                                            )}
-                                            <button className="btn btn-danger" style={{ padding: '0.5rem', fontSize: '0.8rem' }} onClick={() => handleDeleteDoctor(doc.id)}>Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                        ))}
+                    </tbody>
+                </table>
             </div>
 
-            {/* Appointments Table (Optional: could be a separate component or collapsible) */}
-            <div className="card">
-                <h2>All Appointments</h2>
-                <div className="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Doctor</th>
-                                <th>Patient</th>
-                                <th>Date/Time</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {appointments.map(apt => (
-                                <tr key={apt.id}>
-                                    <td>{apt.doctor_name}</td>
-                                    <td>{apt.patient_name}</td>
-                                    <td>{apt.date} at {apt.time}</td>
-                                    <td><span className={`status-badge status-${apt.status}`}>{apt.status}</span></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+            <div className="section-title">
+                <h2>Global Appointment Ledger</h2>
             </div>
-
+            <div className="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Expert</th>
+                            <th>Patient</th>
+                            <th>Schedule</th>
+                            <th style={{ textAlign: 'right' }}>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {appointments.map(apt => (
+                            <tr key={apt.id}>
+                                <td style={{ fontWeight: '500' }}>{apt.doctor_name}</td>
+                                <td>{apt.patient_name}</td>
+                                <td style={{ color: 'var(--text-muted)' }}>{apt.date} at {apt.time}</td>
+                                <td style={{ textAlign: 'right' }}><span className={`status-badge status-${apt.status}`}>{apt.status.toUpperCase()}</span></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

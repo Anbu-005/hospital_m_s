@@ -29,8 +29,8 @@ router.post('/doctor', upload.single('photo'), async (req, res) => {
         return res.status(400).json({ message: 'All fields are required' });
     }
 
-    // Photo URL construction
-    const photoUrl = req.file ? `http://localhost:5000/uploads/${req.file.filename}` : 'https://via.placeholder.com/150';
+    // Photo URL construction (relative path for portability)
+    const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     try {
         const existingUser = await User.findOne({ email });
